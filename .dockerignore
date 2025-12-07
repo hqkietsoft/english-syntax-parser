@@ -1,0 +1,18 @@
+venv
+__pycache__
+.git
+.gitignore
+*.md
+# Nếu thư mục models quá nặng và bạn có thể tải model lúc chạy (runtime), hãy ignore nó.
+# Nhưng nếu bắt buộc phải gói model vào image thì cứ để lại dòng dưới.
+# models
+
+models/final
+
+models/coedit-large
+
+*.md
+*.txt
+!requirements.txt
+
+evaluation/model_weights.pt

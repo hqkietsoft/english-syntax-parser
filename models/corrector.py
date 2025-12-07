@@ -324,82 +324,109 @@ class GrammarCorrector:
     A grammar correction model using T5.
     """
     
-    def __init__(self, model_name="models/coedit-large", device="cpu", use_8bit=False):
+    def __init__(self, model_name="grammarly/coedit-large", device="cpu", use_8bit=False):
         """
         Khởi tạo mô hình sửa lỗi ngữ pháp.
         
         Args:
-            model_name (str): Tên hoặc đường dẫn của mô hình T5
-            device (str): Thiết bị để chạy mô hình ('cuda' hoặc 'cpu')
-            use_8bit (bool): Sử dụng lượng tử hóa 8-bit để giảm sử dụng bộ nhớ
+            model_name (str): Tên model trên HuggingFace hoặc đường dẫn cục bộ
+            device (str): Thiết bị chạy ('cuda' hoặc 'cpu')
         """
         self.device = device
         logger.info(f"Sử dụng thiết bị: {self.device}")
         
-        # Trực tiếp sử dụng model coedit-large
         try:
+            # Ưu tiên tải từ Hugging Face để phù hợp với Docker/Cloud
+            # Nếu model_name là đường dẫn local nhưng không tồn tại, tự động chuyển sang tên HF chuẩn
             if os.path.isdir(model_name):
-                logger.info(f"Sử dụng model cục bộ từ: {model_name}")
-                model_name = os.path.abspath(model_name)
+                logger.info(f"Phát hiện model cục bộ: {model_name}")
             else:
-                logger.info(f"Tải model từ Hugging Face: grammarly/coedit-large")
-                model_name = "grammarly/coedit-large"
+                logger.info(f"Không tìm thấy model cục bộ. Đang tải '{model_name}' từ Hugging Face...")
+                # Đảm bảo dùng tên chuẩn của Grammarly nếu input đầu vào bị sai
+                if "coedit" in model_name and not os.path.exists(model_name):
+                    model_name = "grammarly/coedit-large"
+
+            logger.info(f"Bắt đầu tải model: {model_name}")
             
-            # Tải mô hình
-            logger.info(f"Đang tải model: {model_name}")
-            
-            logger.info("Đang tải tokenizer...")
+            # 1. Tải Tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(model_name)
             
-            logger.info("Đang tải mô hình (có thể mất vài phút)...")
-            
-            # Sử dụng định dạng chuẩn cho CPU
-            logger.info("Đang tải mô hình ở định dạng chuẩn...")
-            self.model = T5ForConditionalGeneration.from_pretrained(model_name)
+            # 2. Tải Model
+            # low_cpu_mem_usage=True: Giúp không bị tràn RAM khi load model nặng
+            self.model = T5ForConditionalGeneration.from_pretrained(
+                model_name,
+                low_cpu_mem_usage=True 
+            )
             self.model = self.model.to(self.device)
             
-            logger.info("Đã tải xong model")
+            logger.info("Đã tải xong model thành công!")
                 
         except Exception as e:
-            logger.error(f"Lỗi khi tải mô hình: {e}")
+            logger.error(f"Lỗi nghiêm trọng khi tải model: {e}")
             logger.error(traceback.format_exc())
             raise
 
-        self.pos_analyzer = PartOfSpeechAnalyzer()
-        # Tải các gói NLTK cần thiết
-        try:
-            nltk.data.find('tokenizers/punkt')
-        except LookupError:
-            nltk.download('punkt')
-        try:
-            nltk.data.find('taggers/averaged_perceptron_tagger')
-        except LookupError:
-            nltk.download('averaged_perceptron_tagger')
-        
+        # Tải các gói NLTK cần thiết (quan trọng cho Docker chưa có data NLTK)
+        self._download_nltk_data()
+
+    def _download_nltk_data(self):
+        """Hàm phụ trợ để tải dữ liệu NLTK an toàn"""
+        required_packages = ['punkt', 'averaged_perceptron_tagger']
+        for package in required_packages:
+            try:
+                nltk.data.find(f'tokenizers/{package}' if package == 'punkt' else f'taggers/{package}')
+            except LookupError:
+                logger.info(f"Đang tải gói NLTK: {package}")
+                nltk.download(package, quiet=True)
+
     def correct_text(self, text, max_length=128):
+
         sentences = sent_tokenize(text)
+
         corrected_sentences = []
-        
+
+       
+
         for sentence in sentences:
+
             # For T5, we prefix the input with "grammar: "
+
             input_text = f"grammar: {sentence}"
-            
+
+           
+
             # Tokenize and prepare for the model
+
             input_ids = self.tokenizer.encode(input_text, return_tensors="pt").to(self.device)
-            
+
+           
+
             # Generate corrected output
+
             outputs = self.model.generate(
+
                 input_ids=input_ids,
+
                 max_length=max_length,
+
                 num_beams=5,
+
                 early_stopping=True
+
             )
-            
+
+           
+
             # Decode the generated tokens
+
             corrected = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+
             corrected_sentences.append(corrected)
-        
+
+       
+
         # Join the corrected sentences
+
         return " ".join(corrected_sentences)
     
     def identify_errors(self, original, corrected):
