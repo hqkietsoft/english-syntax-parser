@@ -19,23 +19,31 @@
 
 ---
 
-## 📸 Product & System Screenshots
+## 📸 Product Screenshots
 
-### 1. User Interface (Web App)
-The application features a clean, responsive interface built with HTML5/CSS3 and Flask Templates.
+### 1. Core Workflow (Quy trình chính)
+Trải nghiệm người dùng mượt mà từ việc nhập liệu đến nhận kết quả phân tích AI.
 
-| **Home Page & Input** | **Correction & Syntax Analysis** |
+| **Smart Editor Interface** | **AI Error Detection** |
 |:---:|:---:|
-| ![Home Page](docs/images/home_ui.png) | ![Analysis Result](docs/images/result_ui.png) |
-| *Simple input interface for raw text* | *Real-time grammar correction & POS Tagging visualization* |
+| ![Home](docs/images/homepage.png) | ![Analysis](docs/images/enter_incorrectly.png) |
+| *Giao diện soạn thảo sạch sẽ, tập trung* | *Phát hiện lỗi ngữ pháp & Phân tích cú pháp thời gian thực* |
 
-### 2. DevOps & Infrastructure (Under the Hood)
-Evidence of the automated pipeline and cloud infrastructure.
+### 2. Advanced Features (Tính năng nâng cao)
+Hỗ trợ đa phương thức nhập liệu và gợi ý thông minh.
 
-| **CI/CD Pipeline (GitHub Actions)** | **AWS & Docker Deployment** |
+| **AI Suggestions** | **Voice Input Support** |
 |:---:|:---:|
-| ![CI/CD Logs](docs/images/cicd_pipeline.png) | ![Docker Container](docs/images/docker_run.png) |
-| *Automated Build & Push to Docker Hub* | *Container running on AWS EC2 with Volume Mapping* |
+| ![Suggestions](docs/images/ai_suggestions.png) | ![Voice](docs/images/voice_input.png) |
+| *Gợi ý chỉnh sửa văn phong tự nhiên* | *Tích hợp nhận diện giọng nói (Speech-to-Text)* |
+
+### 3. User Management
+Hệ thống quản lý người dùng bảo mật.
+
+| **Secure Login** | **Registration** |
+|:---:|:---:|
+| ![Login](docs/images/login.png) | ![Register](docs/images/register.png) |
+| *Đăng nhập bảo mật với Session Management* | *Đăng ký tài khoản người dùng mới* |
 
 ---
 
