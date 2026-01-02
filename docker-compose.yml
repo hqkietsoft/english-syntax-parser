@@ -38,7 +38,7 @@ services:
       - "9080:9080"
     volumes:
       - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/config.yaml
-      - //var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
       # [QUAN TRỌNG] Mount thư mục log Nginx từ Host vào Container
       - /var/log/nginx:/var/log/nginx:ro
     command: -config.file=/etc/promtail/config.yaml
