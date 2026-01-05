@@ -14,8 +14,6 @@ services:
     networks:
       - app_network
 
-  # (Đã xóa service nginx ở đây vì bạn dùng nginx của host)
-
   # =========================================
   # MONITORING STACK
   # =========================================
@@ -34,12 +32,12 @@ services:
     container_name: monitoring_promtail
     privileged: true
     user: root # Chạy quyền root để đọc được file log của Host
-    ports:              # <--- THÊM ĐOẠN NÀY
+    ports:
       - "9080:9080"
     volumes:
       - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
-      # [QUAN TRỌNG] Mount thư mục log Nginx từ Host vào Container
+      # Mount thư mục log Nginx từ Host vào Container
       - /var/log/nginx:/var/log/nginx:ro
     command: -config.file=/etc/promtail/config.yaml
     depends_on:
@@ -60,6 +58,25 @@ services:
     networks:
       - app_network
 
+
+
+  # Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: monitoring_prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: monitoring_node_exporter
+    ports:
+      - "9100:9100"
+
 networks:
   app_network:
     driver: bridge
+
+    
