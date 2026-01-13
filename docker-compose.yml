@@ -55,7 +55,7 @@ services:
     volumes:
       - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
-      - /var/log/nginx:/var/log/nginx:ro
+      - nginx_logs:/var/log/nginx:ro
     command: -config.file=/etc/promtail/config.yaml
     depends_on:
       - loki
@@ -101,5 +101,5 @@ networks:
   app_network:
     driver: bridge
 
-# volumes:
-#   nginx_logs:
+volumes:
+  nginx_logs:
