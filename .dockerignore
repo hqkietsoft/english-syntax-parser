@@ -8,8 +8,7 @@ __pycache__
 .env
 venv/
 
-models/final
-models/coedit-large
+model_weights/
 
 *.txt
 !requirements.txt

@@ -6,3 +6,4 @@ venv/
 instance/
 __pycache__/
 .env
+model_weights/

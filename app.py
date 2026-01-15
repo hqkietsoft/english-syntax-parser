@@ -37,10 +37,19 @@ logging.basicConfig(
 )
 
 # --- CẤU HÌNH MODEL ---
-# Sử dụng tên trực tiếp trên HuggingFace để Docker tự tải về
-model_name = "grammarly/coedit-large"
-logging.info("Initializing model...")
-# Thêm use_8bit=False để chạy ổn định trên CPU
+# Kiểm tra xem có đang chạy trong Docker không (thư mục weights có tồn tại không)
+docker_weight_path = "/app/weights/coedit-large"
+
+if os.path.exists(docker_weight_path):
+    # Ưu tiên load từ Volume đã mount (Nhanh, không cần tải lại)
+    model_name = docker_weight_path
+    logging.info(f"Loading model from Docker volume: {model_name}")
+else:
+    # Nếu chạy local hoặc chưa tải, dùng tên trên HuggingFace
+    model_name = "grammarly/coedit-large"
+    logging.info(f"Loading model from HuggingFace: {model_name}")
+
+# Khởi tạo model
 model = GrammarCorrector(model_name=model_name, device="cpu", use_8bit=False)
 logging.info("Model initialized successfully!")
 
