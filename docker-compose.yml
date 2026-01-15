@@ -8,6 +8,8 @@ services:
     #   # Map port 5000 của Host vào port 8000 của Container
     #   # Vì Nginx của bạn đang proxy_pass http://localhost:5000
     #   - "5000:5000" 
+    volumes:
+      - ./models:/app/models
     expose:
       - "5000"
     environment:

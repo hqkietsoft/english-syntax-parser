@@ -1,21 +1,35 @@
-# Sử dụng Python image nhẹ (slim) làm nền
-FROM python:3.9-slim
+# ==========================================
+# STAGE 1: Builder (Dùng để cài đặt thư viện)
+# ==========================================
+FROM python:3.9-slim as builder
 
-# Thiết lập thư mục làm việc trong container
 WORKDIR /app
 
-# Copy file requirements vào trước để tận dụng cache của Docker
+RUN apt-get update && apt-get install -y \
+    gcc \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
-# Cài đặt các thư viện
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Copy toàn bộ code dự án vào container
+
+# ==========================================
+# STAGE 2: Runtime (Image cuối cùng để chạy)
+# ==========================================
+FROM python:3.9-slim
+
+WORKDIR /app
+
+
+COPY --from=builder /install /usr/local
+
+# Copy code dự án vào
 COPY . .
 
-# Mở port 5000 (Port mặc định của Flask)
+# Mở port
 EXPOSE 5000
 
-# Lệnh chạy ứng dụng khi container khởi động
-# Thay 'app.py' bằng tên file chạy chính của bạn
+# Chạy app
 CMD ["python", "app.py"]
