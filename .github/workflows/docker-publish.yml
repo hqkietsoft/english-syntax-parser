@@ -30,7 +30,7 @@ jobs:
     needs: build
     steps:
       # --------------------------------------------------------
-      # SERVER Thủ công
+      # 1. SERVER CŨ (Manual - Giữ nguyên đang chạy)
       # --------------------------------------------------------
       - name: Deploy to Old Manual Server
         uses: appleboy/ssh-action@v1.0.0
@@ -53,15 +53,19 @@ jobs:
             docker image prune -f
 
       # --------------------------------------------------------
-      # SERVER MỚI (Terraform + Ansible)
+      # 2. SERVER MỚI (Swarm Manager - Đã sửa đổi)
       # --------------------------------------------------------
-      - name: Deploy to New Terraform Server
+      - name: Deploy to New Swarm Cluster
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.EC2_HOST_TF }}
-          username: ${{ secrets.EC2_USER_TF }}
+          # IP này là Elastic IP của con Manager bạn vừa tạo
+          host: ${{ secrets.EC2_SWARM_MANAGER_IP }} 
+          # Lưu ý: Amazon Linux 2023 dùng user là 'ec2-user'
+          username: ec2-user
+          # Key này là key 'ansible_key.pem' mới (nhớ update lại Secret trên Github)
           key: ${{ secrets.EC2_SSH_KEY_TF }}
           script: |
+            # 1. Pull code mới nhất về Manager
             mkdir -p english-syntax-parser
             cd english-syntax-parser
             
@@ -70,9 +74,18 @@ jobs:
             else
               git clone https://github.com/hqkietsoft/english-syntax-parser.git .
             fi
-
-            mkdir -p model_weights
             
-            docker compose pull
-            docker compose up -d --remove-orphans
+            # 2. Tạo thư mục chứa model (nếu cần mount volume)
+            mkdir -p model_weights
+
+            # 3. Pull image mới nhất về máy Manager trước
+            docker pull hqkietsoft/english-syntax-parser:latest
+
+            # 4. Deploy Stack
+            docker stack deploy -c docker-compose.yml app_stack --with-registry-auth
+            
+            # 5. Cập nhật Service (Bắt buộc để force update container)
+            docker service update --image hqkietsoft/english-syntax-parser:latest app_stack_web --force
+
+            # 6. Dọn dẹp image rác
             docker image prune -f
