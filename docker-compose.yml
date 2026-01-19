@@ -86,6 +86,13 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      # 1. tự nhận Data Source
+      - ./monitoring/grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      
+      # 2. lưu Dashboard, User, Pass không bị mất khi restart
+      - grafana_data:/var/lib/grafana
     networks:
       - app_network
     deploy:
@@ -125,3 +132,4 @@ networks:
 
 volumes:
   nginx_logs:
+  grafana_data:
