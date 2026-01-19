@@ -19,11 +19,16 @@ services:
       replicas: 2 
       restart_policy:
         condition: on-failure
+      update_config:
+        parallelism: 1        # Chỉ update từng con một
+        delay: 10s            # Chờ 10s sau khi update xong con đầu rồi mới làm con tiếp
+        order: start-first    # Bật con mới lên chạy ngon đã rồi mới tắt con cũ
+        failure_action: rollback # Lỗi thì tự quay về bản cũ
       placement:
         constraints:
           - node.role == manager 
           # folder ./model_weights chỉ có trên máy Manager (do git pull về đó)
-          # Nếu muốn chạy trên Worker, bạn phải dùng NFS hoặc build weight vào image.
+          # Nếu muốn chạy trên Worker, dùng NFS hoặc build weight vào image.
 
   # =========================================
   # 2. NGINX REVERSE PROXY
