@@ -1,13 +1,11 @@
 version: '3.8'
 
 services:
+  # =========================================
+  # 1. CORE API
+  # =========================================
   api:
     image: hqkietsoft/english-syntax-parser:latest
-    container_name: english_parser_app
-    # ports:
-    #   # Map port 5000 của Host vào port 8000 của Container
-    #   # Vì Nginx của bạn đang proxy_pass http://localhost:5000
-    #   - "5000:5000" 
     volumes:
       - ./model_weights:/app/weights
     expose:
@@ -17,40 +15,51 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     networks:
       - app_network
+    deploy:
+      replicas: 2 
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager 
+          # folder ./model_weights chỉ có trên máy Manager (do git pull về đó)
+          # Nếu muốn chạy trên Worker, bạn phải dùng NFS hoặc build weight vào image.
 
   # =========================================
-  # 2. NGINX REVERSE PROXY (Mới thêm)
+  # 2. NGINX REVERSE PROXY
   # =========================================
   nginx:
     image: nginx:alpine
-    container_name: nginx_proxy
     ports:
       - "80:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - nginx_logs:/var/log/nginx 
-    depends_on:
-      - api
     networks:
       - app_network
-
+    deploy:
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == manager
+          # File ./nginx/default.conf chỉ nằm trên Manager
 
   # =========================================
-  # MONITORING STACK
+  # 3. MONITORING STACK
   # =========================================
   loki:
     image: grafana/loki:2.9.0
-    container_name: monitoring_loki
     volumes:
       - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - app_network
+    deploy:
+      placement:
+        constraints: [node.role == manager] 
 
   promtail:
     image: grafana/promtail:3.0.0
-    container_name: monitoring_promtail
-    privileged: true
     user: root
     ports:
       - "9080:9080"
@@ -59,49 +68,55 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - nginx_logs:/var/log/nginx:ro
     command: -config.file=/etc/promtail/config.yaml
-    depends_on:
-      - loki
-      - nginx
     networks:
       - app_network
+    deploy:
+      placement:
+        constraints: [node.role == manager] # Cần đọc logs từ volume nginx trên Manager
 
   grafana:
     image: grafana/grafana:latest
-    container_name: monitoring_grafana
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
-    depends_on:
-      - loki
     networks:
       - app_network
+    deploy:
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
 
-
-
-  # Metrics
   prometheus:
     image: prom/prometheus:latest
-    container_name: monitoring_prometheus
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
       - app_network
+    deploy:
+      placement:
+        constraints: [node.role == manager]
 
+  # Riêng Node Exporter sẽ chạy trên TẤT CẢ các máy (Global)
   node_exporter:
     image: prom/node-exporter:latest
-    container_name: monitoring_node_exporter
     ports:
       - "9100:9100"
     networks:
       - app_network
+    deploy:
+      mode: global # Chạy trên mọi node (Manager + Workers) để giám sát phần cứng
 
+# =========================================
+# NETWORKS & VOLUMES
+# =========================================
 networks:
   app_network:
-    driver: bridge
+    driver: overlay 
+    attachable: true
 
 volumes:
   nginx_logs:
