@@ -5,7 +5,7 @@ on:
     branches: ["master"]
 
 jobs:
-  # Job 1: Build Docker Image (Giữ nguyên)
+  # Job 1: Build Docker Image
   build:
     runs-on: ubuntu-latest
     steps:
@@ -30,7 +30,7 @@ jobs:
     needs: build
     steps:
       # --------------------------------------------------------
-      # 1. SERVER CŨ (Manual - Giữ nguyên đang chạy)
+      # 1. SERVER CŨ (Manual)
       # --------------------------------------------------------
       - name: Deploy to Old Manual Server
         uses: appleboy/ssh-action@v1.0.0
@@ -53,16 +53,13 @@ jobs:
             docker image prune -f
 
       # --------------------------------------------------------
-      # 2. SERVER MỚI (Swarm Manager - Đã sửa đổi)
+      # 2. SERVER MỚI (Swarm Manager)
       # --------------------------------------------------------
       - name: Deploy to New Swarm Cluster
         uses: appleboy/ssh-action@v1.0.0
         with:
-          # IP này là Elastic IP của con Manager bạn vừa tạo
           host: ${{ secrets.EC2_SWARM_MANAGER_IP }} 
-          # Lưu ý: Amazon Linux 2023 dùng user là 'ec2-user'
           username: ec2-user
-          # Key này là key 'ansible_key.pem' mới (nhớ update lại Secret trên Github)
           key: ${{ secrets.EC2_SSH_KEY_TF }}
           script: |
             # 1. Pull code mới nhất về Manager
