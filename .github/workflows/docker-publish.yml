@@ -82,7 +82,7 @@ jobs:
             docker stack deploy -c docker-compose.yml app_stack --with-registry-auth
             
             # 5. Cập nhật Service (Bắt buộc để force update container)
-            docker service update --image hqkietsoft/english-syntax-parser:latest app_stack_web --force
+            docker service update --image hqkietsoft/english-syntax-parser:latest app_stack_api --force
 
             # 6. Dọn dẹp image rác
             docker image prune -f
